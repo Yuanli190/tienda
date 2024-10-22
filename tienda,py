@@ -1,0 +1,256 @@
+from abc import ABC, abstractmethod
+from enum import Enum, auto
+
+class Genero(Enum):
+    UNISEX = auto()
+    MASCULINO = auto()
+    FEMENINO = auto()
+
+class Producto(ABC):
+    def __init__(self, nombre, precio, genero):
+        self._nombre = nombre
+        self._precio = precio
+        self._genero = genero
+
+    @property
+    def nombre(self):
+        return self._nombre
+
+    @property
+    def precio(self):
+        return self._precio
+
+    @property
+    def genero(self):
+        return self._genero
+
+    @abstractmethod
+    def describir(self):
+        pass
+
+class Ropa(Producto):
+    def __init__(self, nombre, precio, genero, talla):
+        super().__init__(nombre, precio, genero)
+        self._talla = talla
+
+    @property
+    def talla(self):
+        return self._talla
+
+    def describir(self):
+        return f"{self.nombre} ({self.genero.name}) (Talla: {self.talla}) - ${self.precio:.2f}"
+
+class Camisa(Ropa):
+    def __init__(self, nombre, precio, genero, talla, tipo):
+        super().__init__(nombre, precio, genero, talla)
+        self._tipo = tipo
+
+    def describir(self):
+        return f"{super().describir()} - Tipo: {self._tipo}"
+
+class Pantalon(Ropa):
+    def __init__(self, nombre, precio, genero, talla, estilo):
+        super().__init__(nombre, precio, genero, talla)
+        self._estilo = estilo
+
+    def describir(self):
+        return f"{super().describir()} - Estilo: {self._estilo}"
+
+class Vestido(Ropa):
+    def __init__(self, nombre, precio, talla, longitud):
+        super().__init__(nombre, precio, Genero.FEMENINO, talla)
+        self._longitud = longitud
+
+    def describir(self):
+        return f"{super().describir()} - Longitud: {self._longitud}"
+
+class Zapato(Producto):
+    def __init__(self, nombre, precio, genero, numero):
+        super().__init__(nombre, precio, genero)
+        self._numero = numero
+
+    def describir(self):
+        return f"{self.nombre} ({self.genero.name}) (Número: {self._numero}) - ${self.precio:.2f}"
+
+class Categoria:
+    def __init__(self, nombre):
+        self._nombre = nombre
+        self._productos = []
+
+    def agregar_producto(self, producto):
+        self._productos.append(producto)
+
+    def listar_productos(self, genero=None):
+        if genero:
+            return [producto.describir() for producto in self._productos if producto.genero == genero]
+        return [producto.describir() for producto in self._productos]
+
+class Tienda:
+    def __init__(self, nombre):
+        self._nombre = nombre
+        self._categorias = {}
+
+    def agregar_categoria(self, nombre_categoria):
+        self._categorias[nombre_categoria] = Categoria(nombre_categoria)
+
+    def agregar_producto(self, nombre_categoria, producto):
+        if nombre_categoria in self._categorias:
+            self._categorias[nombre_categoria].agregar_producto(producto)
+        else:
+            print(f"La categoría {nombre_categoria} no existe.")
+
+    def listar_productos_por_categoria(self, nombre_categoria, genero=None):
+        if nombre_categoria in self._categorias:
+            return self._categorias[nombre_categoria].listar_productos(genero)
+        else:
+            return []
+
+class Carrito:
+    def __init__(self):
+        self._items = []
+
+    def agregar_item(self, producto, cantidad):
+        self._items.append((producto, cantidad))
+
+    def calcular_total(self):
+        return sum(producto.precio * cantidad for producto, cantidad in self._items)
+
+    def listar_items(self):
+        return [f"{producto.describir()} x {cantidad}" for producto, cantidad in self._items]
+
+def crear_producto(categoria, genero):
+    nombre = input(f"Ingrese el nombre del {categoria}: ")
+    precio = float(input(f"Ingrese el precio del {categoria}: "))
+    if categoria == "Camisa":
+        talla = input("Ingrese la talla de la camisa: ")
+        tipo = input("Ingrese el tipo de camisa (Manga larga/Manga corta): ")
+        return Camisa(nombre, precio, genero, talla, tipo)
+    elif categoria == "Pantalon":
+        talla = input("Ingrese la talla del pantalón: ")
+        estilo = input("Ingrese el estilo del pantalón: ")
+        return Pantalon(nombre, precio, genero, talla, estilo)
+    elif categoria == "Vestido":
+        talla = input("Ingrese la talla del vestido: ")
+        longitud = input("Ingrese la longitud del vestido (Corto/Medio/Largo): ")
+        return Vestido(nombre, precio, talla, longitud)
+    elif categoria == "Zapato":
+        numero = int(input("Ingrese el número del zapato: "))
+        return Zapato(nombre, precio, genero, numero)
+    else:
+        return None
+
+def procesar_pago(total):
+    while True:
+        try:
+            pago = float(input(f"El total de su compra es ${total:.2f}. Ingrese la cantidad con la que pagará: $"))
+            if pago < total:
+                print("La cantidad ingresada es insuficiente. Por favor, ingrese un monto igual o mayor al total.")
+            else:
+                vuelto = pago - total
+                print(f"Pago recibido: ${pago:.2f}")
+                print(f"Vuelto: ${vuelto:.2f}")
+                return True
+        except ValueError:
+            print("Por favor, ingrese un monto válido.")
+
+def main():
+    tienda = Tienda("Mi Tienda de Ropa")
+    
+    # Agregar categorías
+    categorias = ["Camisas", "Pantalones", "Vestidos", "Zapatos"]
+    for categoria in categorias:
+        tienda.agregar_categoria(categoria)
+
+    # Agregar productos iniciales
+    tienda.agregar_producto("Camisas", Camisa("Camisa Formal", 29.99, Genero.MASCULINO, "M", "Manga larga"))
+    tienda.agregar_producto("Camisas", Camisa("Blusa Elegante", 24.99, Genero.FEMENINO, "S", "Manga corta"))
+    tienda.agregar_producto("Camisas", Camisa("Camisa Casual", 19.99, Genero.UNISEX, "L", "Manga corta"))
+    tienda.agregar_producto("Pantalones", Pantalon("Jeans", 39.99, Genero.UNISEX, "32", "Slim"))
+    tienda.agregar_producto("Pantalones", Pantalon("Pantalón de Vestir", 49.99, Genero.MASCULINO, "30", "Regular"))
+    tienda.agregar_producto("Vestidos", Vestido("Vestido de Cóctel", 59.99, "M", "Corto"))
+    tienda.agregar_producto("Zapatos", Zapato("Zapatos Formales", 59.99, Genero.MASCULINO, 42))
+    tienda.agregar_producto("Zapatos", Zapato("Tacones Altos", 69.99, Genero.FEMENINO, 38))
+    tienda.agregar_producto("Zapatos", Zapato("Zapatillas Deportivas", 49.99, Genero.UNISEX, 40))
+
+    carrito = Carrito()
+
+    while True:
+        print("\n--- Menú Principal ---")
+        print("1. Ver productos por categoría y género")
+        print("2. Agregar producto al carrito")
+        print("3. Ver carrito")
+        print("4. Finalizar compra")
+        print("5. Agregar nuevo producto a la tienda")
+        print("6. Salir")
+
+        opcion = input("Seleccione una opción: ")
+
+        if opcion == "1":
+            categoria = input("Ingrese la categoría (Camisas/Pantalones/Vestidos/Zapatos): ")
+            genero = input("Ingrese el género (Unisex/Masculino/Femenino) o presione Enter para ver todos: ")
+            genero = Genero[genero.upper()] if genero else None
+            productos = tienda.listar_productos_por_categoria(categoria, genero)
+            for i, producto in enumerate(productos, 1):
+                print(f"{i}. {producto}")
+
+        elif opcion == "2":
+            categoria = input("Ingrese la categoría del producto: ")
+            genero = input("Ingrese el género (Unisex/Masculino/Femenino) o presione Enter para ver todos: ")
+            genero = Genero[genero.upper()] if genero else None
+            productos = tienda.listar_productos_por_categoria(categoria, genero)
+            for i, producto in enumerate(productos, 1):
+                print(f"{i}. {producto}")
+            seleccion = int(input("Seleccione el número del producto: ")) - 1
+            cantidad = int(input("Ingrese la cantidad: "))
+            if 0 <= seleccion < len(productos):
+                producto_seleccionado = next(p for p in tienda._categorias[categoria]._productos if p.describir() == productos[seleccion])
+                carrito.agregar_item(producto_seleccionado, cantidad)
+                print("Producto agregado al carrito.")
+            else:
+                print("Selección inválida.")
+
+        elif opcion == "3":
+            print("\n--- Carrito de Compras ---")
+            for item in carrito.listar_items():
+                print(item)
+            print(f"Total: ${carrito.calcular_total():.2f}")
+
+        elif opcion == "4":
+            print("\n--- Resumen de la Compra ---")
+            for item in carrito.listar_items():
+                print(item)
+            total = carrito.calcular_total()
+            print(f"Total a pagar: ${total:.2f}")
+            
+            if procesar_pago(total):
+                print("Gracias por su compra!")
+                carrito = Carrito()  # Reiniciar el carrito
+            else:
+                print("La compra no se ha completado.")
+
+        elif opcion == "5":
+            categoria = input("Ingrese la categoría del nuevo producto (Camisas/Pantalones/Vestidos/Zapatos): ")
+            if categoria in categorias:
+                if categoria != "Vestidos":
+                    genero_input = input("Ingrese el género (Unisex/Masculino/Femenino): ").upper()
+                    genero = Genero[genero_input]
+                else:
+                    genero = Genero.FEMENINO
+                nuevo_producto = crear_producto(categoria[:-1], genero)  # Removemos la 's' final
+                if nuevo_producto:
+                    tienda.agregar_producto(categoria, nuevo_producto)
+                    print(f"Nuevo producto agregado a la categoría {categoria}.")
+                else:
+                    print("No se pudo crear el producto.")
+            else:
+                print("Categoría no válida.")
+
+        elif opcion == "6":
+            print("Gracias por visitar nuestra tienda. ¡Hasta luego!")
+            break
+
+        else:
+            print("Opción inválida. Por favor, intente de nuevo.")
+
+if __name__ == "__main__":
+    main()
